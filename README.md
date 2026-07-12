@@ -5,8 +5,8 @@ Authentication microservice for the SGSITS College Portal.
 
 ## Prerequisites
 
-- Java 21
-- Gradle
+- Java 24
+- Maven (via Maven Wrapper)
 - MySQL
 
 ## Setup
@@ -28,7 +28,13 @@ copy src\main\resources\application.properties.template src\main\resources\appli
 3. Run the application:
 
 ```bash
-./gradlew bootRun
+./mvnw spring-boot:run
+```
+
+Windows:
+
+```cmd
+.\mvnw.cmd spring-boot:run
 ```
 
 ## API
