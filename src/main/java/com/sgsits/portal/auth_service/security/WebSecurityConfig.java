@@ -64,8 +64,8 @@ public class WebSecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // These paths now match the requests received after Gateway stripping
-                .requestMatchers("/login").permitAll()
+                // ADDED: /error, /, and /actuator/** to allow health checks and unmask 404s
+                .requestMatchers("/login", "/error", "/", "/actuator/**").permitAll()
                 .requestMatchers("/register").hasRole("ADMIN")
                 .requestMatchers("/validate").authenticated()
                 .anyRequest().authenticated()
