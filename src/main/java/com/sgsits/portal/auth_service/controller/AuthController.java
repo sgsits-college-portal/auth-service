@@ -1,10 +1,13 @@
 package com.sgsits.portal.auth_service.controller;
 
+import com.sgsits.portal.auth_service.constants.RoleConstants;
+import com.sgsits.portal.auth_service.constants.RoleValidator;
 import com.sgsits.portal.auth_service.model.User;
 import com.sgsits.portal.auth_service.payload.*;
 import com.sgsits.portal.auth_service.repository.UserRepository;
 import com.sgsits.portal.auth_service.security.JwtUtils;
 import com.sgsits.portal.auth_service.security.services.UserDetailsImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
-@lombok.RequiredArgsConstructor
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -29,22 +32,17 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         try {
-            // 1. Authenticate username and password
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
-            // 2. Validate Role Mismatch
-            // Compare requesting role with actual role in DB
+            // Validate role mismatch
             if (loginRequest.getRole() != null && !userPrincipal.getRole().equalsIgnoreCase(loginRequest.getRole())) {
-                return ResponseEntity
-                        .badRequest()
-                        .body(new MessageResponse("Role mismatch. You cannot log in as " + loginRequest.getRole() + " using these credentials."));
+                return ResponseEntity.badRequest().body(new MessageResponse("Role mismatch."));
             }
 
-            // 3. Generate Token
             String jwt = jwtUtils.generateJwtToken(authentication);
 
             return ResponseEntity.ok(new JwtResponse(jwt,
@@ -55,39 +53,32 @@ public class AuthController {
                     userPrincipal.getFullName(),
                     userPrincipal.getEmail()));
         } catch (BadCredentialsException e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Invalid username or password."));
-        } catch (Exception e) {
-            return ResponseEntity
-                    .internalServerError()
-                    .body(new MessageResponse("Error occurred during authentication: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(new MessageResponse("Invalid username or password."));
         }
     }
 
     @PostMapping("/register")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest signUpRequest) {
-        // 1. Check if username exists
+        // 1. Role Validation using our new Utility
+        if (!RoleValidator.isValidRole(signUpRequest.getRole())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid role provided!"));
+        }
+        if (!RoleValidator.isValidSubRole(signUpRequest.getSubRole())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid sub-role provided!"));
+        }
+
+        // 2. Duplicate checks
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Username is already taken!"));
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Username taken!"));
         }
 
-        // 2. Check if email exists
-        if (signUpRequest.getEmail() != null && !signUpRequest.getEmail().trim().isEmpty() 
-                && userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Email is already in use!"));
-        }
+        // 3. Normalization
+        String roleStr = signUpRequest.getRole().toUpperCase();
+        String subRoleStr = (signUpRequest.getSubRole() != null) 
+                            ? signUpRequest.getSubRole().toUpperCase() 
+                            : RoleConstants.SUB_NONE;
 
-        // 3. Normalize values
-        String roleStr = signUpRequest.getRole() != null ? signUpRequest.getRole().toUpperCase() : "STUDENT";
-        String subRoleStr = signUpRequest.getSubRole() != null ? signUpRequest.getSubRole().toUpperCase() : null;
-
-        // Create new user's account
         User user = new User(
                 null,
                 signUpRequest.getUsername(),
@@ -102,16 +93,14 @@ public class AuthController {
         );
 
         userRepository.save(user);
-
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
 
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken(Authentication authentication) {
         if (authentication == null) {
-            return ResponseEntity.badRequest().body(new MessageResponse("No active session found."));
+            return ResponseEntity.badRequest().body(new MessageResponse("No active session."));
         }
-        UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-        return ResponseEntity.ok(userPrincipal);
+        return ResponseEntity.ok((UserDetailsImpl) authentication.getPrincipal());
     }
 }
