@@ -64,10 +64,10 @@ public class WebSecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // ADDED: /error, /, and /actuator/** to allow health checks and unmask 404s
-                .requestMatchers("/login", "/error", "/", "/actuator/**").permitAll()
-                .requestMatchers("/register").hasRole("ADMIN")
-                .requestMatchers("/validate").authenticated()
+                // CATCH-ALL FIX: Covers all routing variations from the Gateway
+                .requestMatchers("/login", "/auth/login", "/api/auth/login", "/error", "/", "/actuator/**").permitAll()
+                .requestMatchers("/register", "/auth/register", "/api/auth/register").hasRole("ADMIN")
+                .requestMatchers("/validate", "/auth/validate", "/api/auth/validate").authenticated()
                 .anyRequest().authenticated()
             );
 
