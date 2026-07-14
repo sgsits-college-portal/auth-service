@@ -114,4 +114,9 @@ public class AuthController {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
         return ResponseEntity.ok(userPrincipal);
     }
+
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(userRepository.findAll());
+    }
 }
