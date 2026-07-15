@@ -103,13 +103,9 @@ public class AuthController {
         }
         return ResponseEntity.ok((UserDetailsImpl) authentication.getPrincipal());
     }
-<<<<<<< HEAD
 
     @GetMapping("/users")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userRepository.findAll());
     }
 }
-=======
-}
->>>>>>> 1e0394f4e63d1a67c6893d986eec8156065114fb
