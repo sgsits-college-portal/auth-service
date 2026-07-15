@@ -103,4 +103,9 @@ public class AuthController {
         }
         return ResponseEntity.ok((UserDetailsImpl) authentication.getPrincipal());
     }
+
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(userRepository.findAll());
+    }
 }
