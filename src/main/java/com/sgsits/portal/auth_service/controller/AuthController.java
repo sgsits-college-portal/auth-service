@@ -14,8 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import com.sgsits.portal.auth_service.payload.UserLookupResponse;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
 @lombok.RequiredArgsConstructor
@@ -113,5 +114,20 @@ public class AuthController {
         }
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
         return ResponseEntity.ok(userPrincipal);
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<UserLookupResponse>> getAllUsers() {
+        return ResponseEntity.ok(
+                userRepository.findAll().stream()
+                        .map(u -> new UserLookupResponse(
+                                u.getId(),
+                                u.getFullName(),
+                                u.getEmail(),
+                                u.getRole(),
+                                u.getSubRole()
+                        ))
+                        .toList()
+        );
     }
 }

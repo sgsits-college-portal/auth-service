@@ -14,7 +14,7 @@ Authentication microservice for the SGSITS College Portal.
 1. Copy the template configuration:
 
 ```bash
-cp src/main/resources/application.properties.template src/main/resources/application.properties
+cp src/main/resources/application.properties src/main/resources/application.properties
 ```
 
 Windows:
