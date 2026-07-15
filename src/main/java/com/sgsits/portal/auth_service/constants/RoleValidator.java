@@ -8,7 +8,7 @@ public class RoleValidator {
 
     private static final List<String> VALID_ROLES = Arrays.asList(
             RoleConstants.ROLE_STUDENT, RoleConstants.ROLE_FACULTY,
-            RoleConstants.ROLE_HOD, RoleConstants.ROLE_STAFF, RoleConstants.ROLE_ADMIN
+            RoleConstants.ROLE_HOD, "HEAD", RoleConstants.ROLE_STAFF, RoleConstants.ROLE_ADMIN
     );
 
     private static final List<String> VALID_SUB_ROLES = Arrays.asList(
@@ -16,7 +16,8 @@ public class RoleValidator {
             RoleConstants.SUB_HEAD_OF_DEPT, RoleConstants.SUB_LAB_INCHARGE,
             RoleConstants.SUB_LIBRARIAN, RoleConstants.SUB_TECHNICIAN,
             RoleConstants.SUB_OFFICE_ADMIN, RoleConstants.SUB_SYSTEM_ADMIN,
-            RoleConstants.SUB_SUPER_ADMIN
+            RoleConstants.SUB_SUPER_ADMIN, RoleConstants.SUB_EVENT_MANAGER,
+            RoleConstants.SUB_COMPLAINT_MANAGER, RoleConstants.SUB_LEAVE_MANAGER
     );
 
     public static boolean isValidRole(String role) {
@@ -24,7 +25,10 @@ public class RoleValidator {
     }
 
     public static boolean isValidSubRole(String subRole) {
-        // SubRole can be null or empty if it's the "NONE" sub-role
-        return subRole == null || VALID_SUB_ROLES.contains(subRole.toUpperCase());
+        if (subRole == null || subRole.trim().isEmpty() || "NONE".equalsIgnoreCase(subRole.trim())) {
+            return true;
+        }
+        String upper = subRole.trim().toUpperCase();
+        return VALID_SUB_ROLES.contains(upper) || VALID_ROLES.contains(upper);
     }
 }

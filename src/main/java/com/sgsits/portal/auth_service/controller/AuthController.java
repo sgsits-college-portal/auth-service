@@ -75,9 +75,12 @@ public class AuthController {
 
         // 3. Normalization
         String roleStr = signUpRequest.getRole().toUpperCase();
-        String subRoleStr = (signUpRequest.getSubRole() != null) 
-                            ? signUpRequest.getSubRole().toUpperCase() 
-                            : RoleConstants.SUB_NONE;
+        String subRoleStr = signUpRequest.getSubRole();
+        if (subRoleStr == null || subRoleStr.trim().isEmpty() || "NONE".equalsIgnoreCase(subRoleStr.trim())) {
+            subRoleStr = roleStr;
+        } else {
+            subRoleStr = subRoleStr.toUpperCase().trim();
+        }
 
         User user = new User(
                 null,
@@ -107,5 +110,46 @@ public class AuthController {
     @GetMapping("/users")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userRepository.findAll());
+    }
+
+    @PutMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody RegisterRequest updateRequest) {
+        if (updateRequest.getRole() != null && !RoleValidator.isValidRole(updateRequest.getRole())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid role provided!"));
+        }
+        if (updateRequest.getSubRole() != null && !RoleValidator.isValidSubRole(updateRequest.getSubRole())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid sub-role provided!"));
+        }
+
+        return userRepository.findById(id).map(user -> {
+            user.setFullName(updateRequest.getFullName());
+            user.setEmail(updateRequest.getEmail());
+            String roleStr = updateRequest.getRole().toUpperCase();
+            user.setRole(roleStr);
+
+            String subRoleStr = updateRequest.getSubRole();
+            if (subRoleStr == null || subRoleStr.trim().isEmpty() || "NONE".equalsIgnoreCase(subRoleStr.trim())) {
+                subRoleStr = roleStr;
+            } else {
+                subRoleStr = subRoleStr.toUpperCase().trim();
+            }
+            user.setSubRole(subRoleStr);
+            if (updateRequest.getPassword() != null && !updateRequest.getPassword().trim().isEmpty()) {
+                user.setPassword(encoder.encode(updateRequest.getPassword()));
+            }
+            userRepository.save(user);
+            return ResponseEntity.ok(new MessageResponse("User updated successfully!"));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            return ResponseEntity.ok(new MessageResponse("User deleted successfully!"));
+        }
+        return ResponseEntity.notFound().build();
     }
 }

@@ -19,4 +19,7 @@ public class RoleConstants {
     public static final String SUB_OFFICE_ADMIN = "OFFICE_ADMIN";
     public static final String SUB_SYSTEM_ADMIN = "SYSTEM_ADMIN";
     public static final String SUB_SUPER_ADMIN = "SUPER_ADMIN";
+    public static final String SUB_EVENT_MANAGER = "EVENT_MANAGER";
+    public static final String SUB_COMPLAINT_MANAGER = "COMPLAINT_MANAGER";
+    public static final String SUB_LEAVE_MANAGER = "LEAVE_MANAGER";
 }
