@@ -31,8 +31,7 @@ out/
 
 ### VS Code ###
 .vscode/
-### Local Configuration ###
-src/main/resources/application.properties
+
 
 ### Database Dumps ###
 *.sql
