@@ -8,6 +8,7 @@ import com.sgsits.portal.auth_service.repository.UserRepository;
 import com.sgsits.portal.auth_service.security.JwtUtils;
 import com.sgsits.portal.auth_service.security.services.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -104,7 +105,47 @@ public class AuthController {
     }
 
     @GetMapping("/users")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'FACULTY', 'HOD')")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userRepository.findAll());
+    }
+
+    @PutMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody RegisterRequest updateRequest) {
+        return userRepository.findById(id)
+                .map(user -> {
+                    // Validate role if provided
+                    if (updateRequest.getRole() != null) {
+                        if (!RoleValidator.isValidRole(updateRequest.getRole())) {
+                            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid role provided!"));
+                        }
+                        user.setRole(updateRequest.getRole().toUpperCase());
+                    }
+
+                    // Validate and set subRole if provided
+                    if (updateRequest.getSubRole() != null) {
+                        if (!RoleValidator.isValidSubRole(updateRequest.getSubRole())) {
+                            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid sub-role provided!"));
+                        }
+                        user.setSubRole(updateRequest.getSubRole().toUpperCase());
+                    }
+
+                    // Update optional fields if provided
+                    if (updateRequest.getFullName() != null) {
+                        user.setFullName(updateRequest.getFullName());
+                    }
+                    if (updateRequest.getEmail() != null) {
+                        user.setEmail(updateRequest.getEmail());
+                    }
+                    // Update password only if a new one is provided
+                    if (updateRequest.getPassword() != null && !updateRequest.getPassword().isBlank()) {
+                        user.setPassword(encoder.encode(updateRequest.getPassword()));
+                    }
+
+                    userRepository.save(user);
+                    return ResponseEntity.ok(new MessageResponse("User updated successfully!"));
+                })
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("Error: User not found!")));
     }
 }
